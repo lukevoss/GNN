@@ -37,8 +37,8 @@ def generate_monte_carlo_sample(X, num_samples=1000000):
     samples = np.random.rand(num_samples, len(x[0]))
     d_mins = np.min(X, axis=0)
     d_maxs = np.max(X, axis=0)
-    samples = np.add(np.multiply(samples, d_maxs-d_mins), d_mins)
-    b_size = np.prod(d_maxs-d_mins)
+    samples = np.add(np.multiply(samples, d_maxs - d_mins), d_mins)
+    b_size = np.prod(d_maxs - d_mins)
     return samples, b_size
 
 
@@ -61,34 +61,39 @@ def partition_function(tree, X, t_dict):
         mean_vec = t_dict[ln_id][1]
         cov_mat = t_dict[ln_id][2]
         g_probs = multivariate_normal.pdf(
-            samples[leaf_node_ids == ln_id], mean_vec, cov_mat, allow_singular=True)
+            samples[leaf_node_ids == ln_id], mean_vec, cov_mat, allow_singular=True
+        )
         g_cnt = np.sum(g_probs_samples[leaf_node_ids == ln_id] <= g_probs)
-        g_ints.append(portion*(g_cnt/len(samples)*b_size))
+        g_ints.append(portion * (g_cnt / len(samples) * b_size))
 
     return np.sum(g_ints)
 
 
 def get_bootstrap_indices(num_samples, max_length):
-    samples = np.random.rand(num_samples)*max_length
+    samples = np.random.rand(num_samples) * max_length
     return samples.astype(int)
 
 
 class DensityForest:
 
-    def __init__(self, n_estimators, max_depth=10, num_splits=10, min_infogain=1.5, boostrap=True):
-        self.forest = [RandomDensityTree(
-            max_depth, num_splits, min_infogain) for i in range(n_estimators)]
+    def __init__(
+        self, n_estimators, max_depth=10, num_splits=10, min_infogain=1.5, boostrap=True
+    ):
+        self.forest = [
+            RandomDensityTree(max_depth, num_splits, min_infogain)
+            for i in range(n_estimators)
+        ]
         self.boostrap = boostrap
 
     def fit(self, X):
-        if (not (type(X) == "numpy.ndarray")):
+        if not (type(X) == "numpy.ndarray"):
             X = np.array(X)
 
         self.p_funcs = []
         self.tree_dicts = []
         for tree in self.forest:
             tree_sample = X
-            if (self.boostrap):
+            if self.boostrap:
                 tree_sample = X[get_bootstrap_indices(len(X), len(X))]
             tree.fit(tree_sample)
 
@@ -105,7 +110,10 @@ class DensityForest:
                 data = X[clusters[:] == val, :]
                 # t_dict[val] = [len(data)/len(X), np.mean(data,axis=0), np.cov(data.T)]
                 t_dict[val] = [
-                    len(data)/len(X), tree.tree[val].mean, tree.tree[val].cov]
+                    len(data) / len(X),
+                    tree.tree[val].mean,
+                    tree.tree[val].cov,
+                ]
             self.tree_dicts.append(t_dict)
 
             self.p_funcs.append(partition_function(tree, X, t_dict))
@@ -120,13 +128,17 @@ class DensityForest:
             for j, val in enumerate(unique_preds):
                 leaf_idc = preds == val
                 # p_vals = multivariate_normal.pdf(X[preds==val], mean=tree.tree[val].mean, cov=tree.tree[val].cov)
-                norm_fac = self.tree_dicts[i][val][0]/self.p_funcs[i]
+                norm_fac = self.tree_dicts[i][val][0] / self.p_funcs[i]
                 # norm_fac = 1/self.p_funcs[i]
 
                 p_vals = multivariate_normal.pdf(
-                    X[leaf_idc], mean=self.tree_dicts[i][val][1], cov=self.tree_dicts[i][val][2], allow_singular=True)
+                    X[leaf_idc],
+                    mean=self.tree_dicts[i][val][1],
+                    cov=self.tree_dicts[i][val][2],
+                    allow_singular=True,
+                )
 
-                preds[leaf_idc] = p_vals*norm_fac
+                preds[leaf_idc] = p_vals * norm_fac
             leaf_preds[:, i] = preds
 
         mean_p = np.mean(leaf_preds, axis=1)
@@ -175,8 +187,9 @@ for val in unique_cl:
     groups.append(str(val))
 
 
-d_forest = DensityForest(n_estimators=5, max_depth=10,
-                         num_splits=10, min_infogain=1.5, boostrap=False)
+d_forest = DensityForest(
+    n_estimators=5, max_depth=10, num_splits=10, min_infogain=1.5, boostrap=False
+)
 d_forest.fit(x)
 preds = d_forest.predict(x)
 # for p,t in zip(preds[:10],targets[:10]):
@@ -213,9 +226,16 @@ fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)
 
 for data, color, group in zip(data, colors, groups):
-    ax.scatter(data[:, 0], data[:, 1], alpha=1.0, color=color,
-               edgecolors='none', s=5, label=group)
+    ax.scatter(
+        data[:, 0],
+        data[:, 1],
+        alpha=1.0,
+        color=color,
+        edgecolors="none",
+        s=5,
+        label=group,
+    )
 
-plt.title('Matplot scatter plot')
+plt.title("Matplot scatter plot")
 plt.legend(loc=2)
 plt.show()
