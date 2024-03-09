@@ -1,4 +1,3 @@
-from .cINN import ConditionalRealNVP
-from .cINN_ours import OurConditionalRealNVP
+from .autoencoder_simple import AutoencoderSimple
 
-__all__ = (ConditionalRealNVP, OurConditionalRealNVP)
+__all__ = (AutoencoderSimple)

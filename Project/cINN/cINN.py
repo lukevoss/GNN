@@ -2,9 +2,10 @@ import torch
 import torch.nn as nn
 import math
 from scipy.stats import special_ortho_group
+import pytorch_lightning as pl
 
 
-class ConditionalRealNVP(nn.Module):
+class ConditionalRealNVP(pl.LightningModule):
     def __init__(self, input_size, hidden_size, n_blocks, condition_size):
         """
         Initialize a ConditionalRealNVP model.
@@ -87,6 +88,23 @@ class ConditionalRealNVP(nn.Module):
         """
         Q = special_ortho_group.rvs(dim)
         return torch.Tensor(Q)
+    
+    def training_step(self, batch, batch_idx):
+        x_batch, cond_batch = batch
+        z, ljd = self(x_batch, cond_batch)
+        loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
+        self.log("train_loss", loss)
+        return loss
+    
+    def validation_step(self, batch, batch_idx):
+        x_batch, cond_batch = batch
+        z, ljd = self(x_batch, cond_batch)
+        loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
+        self.log("val_loss", loss)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        return optimizer
 
 
 class ConditionalCouplingBlock(nn.Module):
