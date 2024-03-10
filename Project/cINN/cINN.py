@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import math
 from scipy.stats import special_ortho_group
-import pytorch_lightning as pl
+import lightning as L
 
 
-class ConditionalRealNVP(pl.LightningModule):
+class ConditionalRealNVP(L.LightningModule):
     def __init__(self, input_size, hidden_size, n_blocks, condition_size):
         """
         Initialize a ConditionalRealNVP model.
@@ -51,9 +51,9 @@ class ConditionalRealNVP(pl.LightningModule):
         return x, ljd
 
     def _inverse(self, x, cond):
-        cond = nn.functional.one_hot(
-            cond.to(torch.int64), num_classes=self.condition_size
-        )
+        # cond = nn.functional.one_hot(
+        #     cond.to(torch.int64), num_classes=self.condition_size
+        # )
         for l in range(self.n_blocks - 1, 0, -1):
             x = self.coupling_blocks[l](x, cond, rev=True)
             x = torch.matmul(x, self.orthogonal_matrices[l - 1].T)
@@ -62,21 +62,21 @@ class ConditionalRealNVP(pl.LightningModule):
 
     def sample(self, num_samples, cond=None):
         samples = []
-        if cond is None:
-            for c in range(self.condition_size):
-                z = torch.normal(
-                    mean=torch.zeros((num_samples, self.input_size)),
-                    std=torch.ones((num_samples, self.input_size)),
-                )
-                samples.append(self._inverse(
-                    z, cond=c * torch.ones(num_samples)))
-        else:
-            z = torch.normal(
-                mean=torch.zeros((num_samples, self.input_size)),
-                std=torch.ones((num_samples, self.input_size)),
-            )
-            samples.append(self._inverse(
-                z, cond=cond * torch.ones(num_samples)))
+        # if cond is None:
+        #     for c in range(self.condition_size):
+        #         z = torch.normal(
+        #             mean=torch.zeros((num_samples, self.input_size)),
+        #             std=torch.ones((num_samples, self.input_size)),
+        #         )
+        #         samples.append(self._inverse(
+        #             z, cond=c * torch.ones(num_samples)))
+        # else:
+        z = torch.normal(
+            mean=torch.zeros((num_samples, self.input_size)),
+            std=torch.ones((num_samples, self.input_size)),
+        )
+        samples.append(self._inverse(
+            z, cond=cond * torch.ones(num_samples)))
         return torch.cat(samples, 0)
 
     def _create_orthogonal_matrix(self, dim):
