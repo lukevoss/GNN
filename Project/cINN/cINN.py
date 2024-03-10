@@ -38,9 +38,9 @@ class ConditionalRealNVP(pl.LightningModule):
         return self._forward(x, cond)
 
     def _forward(self, x, cond):
-        cond = nn.functional.one_hot(
-            cond.to(torch.int64), num_classes=self.condition_size
-        )  # TODO: condition gets onehot encoded. Does that work for us?
+        # cond = nn.functional.one_hot(
+        #     cond.to(torch.int64), num_classes=self.condition_size
+        # )  # TODO: condition gets onehot encoded. Does that work for us?
         ljd = torch.zeros((x.shape[0]))
         for l in range(self.n_blocks - 1):
             x, partial_ljd = self.coupling_blocks[l](x, cond)
@@ -123,7 +123,7 @@ class ConditionalCouplingBlock(nn.Module):
         self.condition_size = condition_size
         self.split1 = math.floor(self.input_size / 2)
         self.split2 = self.input_size - self.split1
-        self.subnet = self.subnet_constructor(
+        self.subnet = self._subnet_constructor(
             self.split1 + self.condition_size, self.hidden_size, 2 * self.split2
         )
 
