@@ -1,11 +1,64 @@
-import matplotlib.pyplot as plt
 import torch
 from torchvision import transforms
 from torchvision.datasets import MNIST
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
 
 
 class EncodedMNIST(Dataset):
+    """
+    A dataset class for MNIST that encodes images and labels beforehand using
+    provided autoencoder and embedding models.
+    
+    Parameters:
+        autoencoder (nn.Module): The autoencoder model for image encoding.
+        embedding_model (nn.Module): The model to encode labels.
+        root (str): Root directory of MNIST dataset.
+        train (bool): If True, create dataset from training set, else from test set.
+        transform (callable, optional): Optional transform to be applied on a PIL image.
+    """
+    def __init__(self, autoencoder, embedding_model, root="./datasets", train = True):
+        transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,))
+            ]
+        )
+        self.mnist = MNIST(root=root, train=train,
+                           transform=transform, download=True)
+        self.autoencoder = autoencoder
+        self.embedding_model = embedding_model
+        self.encoded_data = []
+        self._encode_dataset()
+
+    def _encode_dataset(self):
+        data_loader = DataLoader(self.mnist, batch_size=100, shuffle=False)
+        for imgs, labels in tqdm(data_loader, desc='Encoding'):
+            encoded_imgs = self.autoencoder.encoder(imgs)
+            labels = [str(label.item()) for label in labels]
+            encoded_labels = self.embedding_model.encode(labels, convert_to_tensor=True)
+            self.encoded_data.extend(zip(encoded_imgs, encoded_labels))
+
+    def __len__(self):
+        return len(self.encoded_data)
+
+    def __getitem__(self, idx):
+        encoded_img, encoded_label = self.encoded_data[idx]
+        return encoded_img, encoded_label
+    
+
+class DynamicEncodedMNIST(Dataset):
+    """
+    A dataset class for MNIST that encodes images and labels on demand using
+    provided autoencoder and embedding models.
+    
+    Parameters:
+        autoencoder (nn.Module): The autoencoder model for image encoding.
+        embedding_model (nn.Module): The model to encode labels.
+        root (str): Root directory of MNIST dataset.
+        train (bool): If True, create dataset from training set, else from test set.
+        transform (callable, optional): Optional transform to be applied on a PIL image.
+    """
     def __init__(self, autoencoder, embedder, root="./datasets", train=True):
         """
         Create encoded MNIST dataset to translate between embedding and latent space representation

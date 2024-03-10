@@ -36,3 +36,4 @@ class CustomMNIST(Dataset):
         Fetch a sample for a given index.
         """
         return self.mnist[idx]
+
