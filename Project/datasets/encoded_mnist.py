@@ -21,6 +21,8 @@ class EncodedMNIST(Dataset):
                            transform=transform, download=True)
         self.autoencoder = autoencoder
         self.embedder = embedder
+        self.autoencoder.eval()
+        self.embedder.eval()
 
     def __len__(self):
         """
@@ -35,12 +37,12 @@ class EncodedMNIST(Dataset):
         """
         image, target = self.mnist[idx]
 
-        with torch.no_grad():  # Ensure no gradients are computed for the autoencoder
-            image = image.unsqueeze(0)  # Add batch dimension
-            encoded_image = self.autoencoder.encoder(image).squeeze(0)  # Remove batch dimension after encoding
+        # latent space representation
+        with torch.no_grad():
+            encoded_image = self.autoencoder.encoder(image)
 
-        with torch.no_grad():  # Ensure no gradients are computed for the embedder
-            target = torch.tensor(target)  # Convert target to tensor if necessary
-            encoded_target = self.embedder(target.unsqueeze(0)).squeeze(0)  # Assuming embedder expects a batch dimension
+        # embedded input
+        with torch.no_grad():  
+            encoded_target = self.embedder.encode(str(target), convert_to_tensor=True)
 
         return encoded_image, encoded_target
