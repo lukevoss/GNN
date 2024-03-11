@@ -22,7 +22,6 @@ class ConditionalRealNVP(L.LightningModule):
         self.n_blocks = n_blocks
         self.condition_size = condition_size
         self.learning_rate = learning_rate
-        #self.device = device
         self.coupling_blocks = nn.ModuleList(
             [
                 ConditionalCouplingBlock(
@@ -30,9 +29,10 @@ class ConditionalRealNVP(L.LightningModule):
                 for _ in range(n_blocks)
             ]
         )
-        self.orthogonal_matrices = [
-            self._create_orthogonal_matrix(input_size) for _ in range(n_blocks - 1)
-        ]
+        self.orthogonal_matrices = nn.ParameterList([
+            nn.Parameter(self._create_orthogonal_matrix(input_size), requires_grad=False) 
+            for _ in range(n_blocks - 1)
+        ])
 
     def forward(self, x, cond, rev=False):
         if rev:
@@ -40,10 +40,7 @@ class ConditionalRealNVP(L.LightningModule):
         return self._forward(x, cond)
 
     def _forward(self, x, cond):
-        # cond = nn.functional.one_hot(
-        #     cond.to(torch.int64), num_classes=self.condition_size
-        # )  # TODO: condition gets onehot encoded. Does that work for us?
-        ljd = torch.zeros((x.shape[0]),  device=x.device)
+        ljd = torch.zeros((x.shape[0]),  device=self.device)
         for l in range(self.n_blocks - 1):
             x, partial_ljd = self.coupling_blocks[l](x, cond)
             ljd += partial_ljd
@@ -53,9 +50,6 @@ class ConditionalRealNVP(L.LightningModule):
         return x, ljd
 
     def _inverse(self, x, cond):
-        # cond = nn.functional.one_hot(
-        #     cond.to(torch.int64), num_classes=self.condition_size
-        # )
         for l in range(self.n_blocks - 1, 0, -1):
             x = self.coupling_blocks[l](x, cond, rev=True)
             x = torch.matmul(x, self.orthogonal_matrices[l - 1].T)
@@ -64,15 +58,6 @@ class ConditionalRealNVP(L.LightningModule):
 
     def sample(self, num_samples, cond=None):
         samples = []
-        # if cond is None:
-        #     for c in range(self.condition_size):
-        #         z = torch.normal(
-        #             mean=torch.zeros((num_samples, self.input_size)),
-        #             std=torch.ones((num_samples, self.input_size)),
-        #         )
-        #         samples.append(self._inverse(
-        #             z, cond=c * torch.ones(num_samples)))
-        # else:
         z = torch.normal(
             mean=torch.zeros((num_samples, self.input_size)),
             std=torch.ones((num_samples, self.input_size)),
@@ -82,19 +67,11 @@ class ConditionalRealNVP(L.LightningModule):
         return torch.cat(samples, 0)
 
     def _create_orthogonal_matrix(self, dim):
-        """
-        A = torch.normal(mean=torch.zeros((dim,dim)), std=torch.ones((dim,dim))) Q, _ = torch.linalg.qr(A)
-        if dim == 2:
-                Q[1,1] = -Q[0,0]
-        Q[0,1] = -Q[1,0] print(torch.linalg.det(Q)) return Q
-        """
         Q = special_ortho_group.rvs(dim)
-        return torch.Tensor(Q)#.to(self.device)
+        return torch.tensor(Q, dtype=torch.float32, device=self.device)
     
     def training_step(self, batch, batch_idx):
         x_batch, cond_batch = batch
-        #x_batch.to(self.device)
-        #cond_batch.to(self.device)
         z, ljd = self(x_batch, cond_batch)
         loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
         self.log("train_loss", loss)
@@ -102,8 +79,6 @@ class ConditionalRealNVP(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x_batch, cond_batch = batch
-        #x_batch.to(self.device)
-        #cond_batch.to(self.device)
         z, ljd = self(x_batch, cond_batch)
         loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
         self.log("val_loss", loss)
@@ -113,7 +88,7 @@ class ConditionalRealNVP(L.LightningModule):
         return optimizer
 
 
-class ConditionalCouplingBlock(nn.Module):
+class ConditionalCouplingBlock(L.LightningModule):
     def __init__(self, input_size, hidden_size, condition_size):
         """
         Initialize a ConditionalCouplingLayer.
