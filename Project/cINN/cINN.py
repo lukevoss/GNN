@@ -6,7 +6,7 @@ import lightning as L
 
 
 class ConditionalRealNVP(L.LightningModule):
-    def __init__(self, input_size, hidden_size, n_blocks, condition_size, learning_rate=1e-3, device='cuda'):
+    def __init__(self, input_size, hidden_size, n_blocks, condition_size, learning_rate=1e-3):
         """
         Initialize a ConditionalRealNVP model.
 
@@ -22,7 +22,7 @@ class ConditionalRealNVP(L.LightningModule):
         self.n_blocks = n_blocks
         self.condition_size = condition_size
         self.learning_rate = learning_rate
-        self.device = device
+        #self.device = device
         self.coupling_blocks = nn.ModuleList(
             [
                 ConditionalCouplingBlock(
@@ -43,7 +43,7 @@ class ConditionalRealNVP(L.LightningModule):
         # cond = nn.functional.one_hot(
         #     cond.to(torch.int64), num_classes=self.condition_size
         # )  # TODO: condition gets onehot encoded. Does that work for us?
-        ljd = torch.zeros((x.shape[0]),  device=self.device)
+        ljd = torch.zeros((x.shape[0]),  device=x.device)
         for l in range(self.n_blocks - 1):
             x, partial_ljd = self.coupling_blocks[l](x, cond)
             ljd += partial_ljd
@@ -89,12 +89,12 @@ class ConditionalRealNVP(L.LightningModule):
         Q[0,1] = -Q[1,0] print(torch.linalg.det(Q)) return Q
         """
         Q = special_ortho_group.rvs(dim)
-        return torch.Tensor(Q).to(self.device)
+        return torch.Tensor(Q)#.to(self.device)
     
     def training_step(self, batch, batch_idx):
         x_batch, cond_batch = batch
-        x_batch.to(self.device)
-        cond_batch.to(self.device)
+        #x_batch.to(self.device)
+        #cond_batch.to(self.device)
         z, ljd = self(x_batch, cond_batch)
         loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
         self.log("train_loss", loss)
@@ -102,8 +102,8 @@ class ConditionalRealNVP(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x_batch, cond_batch = batch
-        x_batch.to(self.device)
-        cond_batch.to(self.device)
+        #x_batch.to(self.device)
+        #cond_batch.to(self.device)
         z, ljd = self(x_batch, cond_batch)
         loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
         self.log("val_loss", loss)
