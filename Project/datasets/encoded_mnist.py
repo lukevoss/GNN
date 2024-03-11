@@ -34,9 +34,9 @@ class EncodedMNIST(Dataset):
     def _encode_dataset(self):
         data_loader = DataLoader(self.mnist, batch_size=100, shuffle=False)
         for imgs, labels in tqdm(data_loader, desc='Encoding'):
-            encoded_imgs = self.autoencoder.encoder(imgs)
+            encoded_imgs = self.autoencoder.encoder(imgs).detach()
             labels = [str(label.item()) for label in labels]
-            encoded_labels = self.embedding_model.encode(labels, convert_to_tensor=True)
+            encoded_labels = self.embedding_model.encode(labels, convert_to_tensor=True).detach()
             self.encoded_data.extend(zip(encoded_imgs, encoded_labels))
 
     def __len__(self):
@@ -92,10 +92,10 @@ class DynamicEncodedMNIST(Dataset):
 
         # latent space representation
         with torch.no_grad():
-            encoded_image = self.autoencoder.encoder(image)
+            encoded_image = self.autoencoder.encoder(image).detach()
 
         # embedded input
         with torch.no_grad():  
-            encoded_target = self.embedder.encode(str(target), convert_to_tensor=True)
+            encoded_target = self.embedder.encode(str(target), convert_to_tensor=True).detach()
 
         return encoded_image, encoded_target

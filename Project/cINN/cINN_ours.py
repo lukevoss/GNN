@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import lightning as L
 
 
-class OurConditionalRealNVP(nn.Module):
-    def __init__(self, input_size, hidden_size, condition_size, blocks):
+class OurConditionalRealNVP(L.LightningModule):
+    def __init__(self, input_size, hidden_size, condition_size, n_blocks, learning_rate=1e-3):
         """
         Initialize a ConditionalRealNVP model.
 
@@ -12,32 +13,32 @@ class OurConditionalRealNVP(nn.Module):
         - input_size (int): Total size of the input data.
         - hidden_size (int): Size of the hidden layers in the neural networks.
         - condition_size (int): Size of the condition vector (e.g., one-hot encoded label size).
-        - blocks (int): Number of coupling layers in the model.
+        - n_blocks (int): Number of coupling layers in the model.
         """
         super(OurConditionalRealNVP, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.condition_size = condition_size
-        self.blocks = blocks
-
+        self.n_blocks = n_blocks
+        self.learning_rate = learning_rate
         # List of coupling layers
         self.coupling_layers = nn.ModuleList(
             [
                 ConditionalCouplingLayer(
                     input_size, hidden_size, condition_size)
-                for _ in range(blocks)
+                for _ in range(n_blocks)
             ]
         )
 
-        # List to store orthonormal matrices
-        self.orthonormal_matrices = [
-            self._get_orthonormal_matrix(input_size) for _ in range(blocks)
-        ]
+        self.orthogonal_matrices = nn.ParameterList([
+            nn.Parameter(self._create_orthogonal_matrix(input_size), requires_grad=False) 
+            for _ in range(n_blocks)
+        ])
 
         # List to store scaling_before_exp for each block
         self.scaling_before_exp_list = []
 
-    def _get_orthonormal_matrix(self, size):
+    def _create_orthogonal_matrix(self, size):
         """
         Generate a random orthonormal matrix.
 
@@ -62,11 +63,10 @@ class OurConditionalRealNVP(nn.Module):
         Returns:
         - x (torch.Tensor): Transformed data.
         """
+        self.scaling_before_exp_list=[]
         scaling_before_exp_list = []
-        for i in range(self.blocks):
-            # print("x is:"); print(x)
-            # print("shape of x is:"); print(x.shape)
-            x = torch.matmul(x, self.orthonormal_matrices[i])
+        for i in range(self.n_blocks):
+            x = torch.matmul(x, self.orthogonal_matrices[i])
             x, scaling_before_exp = self.coupling_layers[i].forward(
                 x, condition)
             scaling_before_exp_list.append(scaling_before_exp)
@@ -85,9 +85,9 @@ class OurConditionalRealNVP(nn.Module):
         Returns:
         - z (torch.Tensor): Reconstructed original data.
         """
-        for i in reversed(range(self.blocks)):
+        for i in reversed(range(self.n_blocks)):
             z = self.coupling_layers[i].backward(z, condition)
-            z = torch.matmul(z, self.orthonormal_matrices[i].t())
+            z = torch.matmul(z, self.orthogonal_matrices[i].t())
         return z
 
     def sample(self, num_samples=1000, conditions=None):
@@ -105,6 +105,53 @@ class OurConditionalRealNVP(nn.Module):
             z = torch.randn(num_samples, self.input_size)
             synthetic_samples = self.decode(z, conditions)
         return synthetic_samples
+    
+    def calculate_loss(self, transformed_x, scaling_before_exp_list):
+        """
+        Calculate the Negative log likelyhood loss for the RealNVP model.
+
+        Args:
+        - transformed_x (tensor): Transformed data produced by the RealNVP model.
+        - scaling_before_exp_list (list): List of scaling_before_exp values for each block.
+        - dataset_length (int): The length of the dataset.
+
+        Returns:
+        - loss (tensor): The calculated loss value.
+        """
+
+        # Calculate the first term of the loss (negative log-likelihood term)
+        first_term = 0.5 * torch.sum(transformed_x**2)
+
+        second_term = -torch.sum(
+            torch.cat(scaling_before_exp_list)
+        )  # torch.sum(torch.stack(model.scaling_before_exp_list), dim=0)
+
+        # Calculate the total loss
+        loss = (first_term + second_term) / transformed_x.size(0)
+
+        return loss
+    
+    def training_step(self, batch, batch_idx):
+        x_batch, cond_batch = batch
+        encoded = self.forward_realnvp(x_batch, cond_batch)
+        loss = self.calculate_loss(encoded, self.scaling_before_exp_list)
+        #z, ljd = self(x_batch, cond_batch)
+        #loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
+        self.log("train_loss", loss)
+        return loss
+    
+    def validation_step(self, batch, batch_idx):
+        x_batch, cond_batch = batch
+        encoded = self.forward_realnvp(x_batch, cond_batch)
+        loss = self.calculate_loss(encoded, self.scaling_before_exp_list)
+        # z, ljd = self(x_batch, cond_batch)
+        # loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
+        self.log("val_loss", loss)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        return optimizer
+    
 
 
 class ConditionalCouplingLayer(nn.Module):
