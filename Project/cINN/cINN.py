@@ -58,12 +58,13 @@ class ConditionalRealNVP(L.LightningModule):
 
     def sample(self, num_samples, cond=None):
         samples = []
-        z = torch.normal(
-            mean=torch.zeros((num_samples, self.input_size)),
-            std=torch.ones((num_samples, self.input_size)),
-        )
-        samples.append(self._inverse(
-            z, cond=cond * torch.ones(num_samples)))
+        # z = torch.normal(
+        #     mean=torch.zeros((num_samples, self.input_size)),
+        #     std=torch.ones((num_samples, self.input_size)),
+        # )
+        z = torch.randn(num_samples, self.input_size)
+        cond = cond.repeat(num_samples, 1)
+        samples.append(self._inverse(z, cond=cond))
         return torch.cat(samples, 0)
 
     def _create_orthogonal_matrix(self, dim):
