@@ -35,6 +35,7 @@ class EncodedMNIST(Dataset):
         data_loader = DataLoader(self.mnist, batch_size=100, shuffle=False)
         for imgs, labels in tqdm(data_loader, desc='Encoding'):
             encoded_imgs = self.autoencoder.encoder(imgs).detach()
+            # TODO: change integer labels to written labels
             labels = [str(label.item()) for label in labels]
             encoded_labels = self.embedding_model.encode(labels, convert_to_tensor=True).detach()
             self.encoded_data.extend(zip(encoded_imgs, encoded_labels))
