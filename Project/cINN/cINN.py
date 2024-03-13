@@ -3,6 +3,7 @@ import torch.nn as nn
 import math
 from scipy.stats import special_ortho_group
 import lightning as L
+import numpy as np
 
 
 class ConditionalRealNVP(L.LightningModule):
@@ -63,6 +64,8 @@ class ConditionalRealNVP(L.LightningModule):
         #     std=torch.ones((num_samples, self.input_size)),
         # )
         z = torch.randn(num_samples, self.input_size)
+        if isinstance(cond, np.ndarray):
+            cond = torch.from_numpy(cond)
         cond = cond.repeat(num_samples, 1)
         samples.append(self._inverse(z, cond=cond))
         return torch.cat(samples, 0)
