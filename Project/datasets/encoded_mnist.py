@@ -3,6 +3,8 @@ from torchvision import transforms
 from torchvision.datasets import MNIST
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
+import random
+import numpy as np
 
 
 class EncodedMNIST(Dataset):
@@ -32,13 +34,62 @@ class EncodedMNIST(Dataset):
         self._encode_dataset()
 
     def _encode_dataset(self):
-        data_loader = DataLoader(self.mnist, batch_size=100, shuffle=False)
+        data_loader = DataLoader(self.mnist, batch_size=500, shuffle=False)
         for imgs, labels in tqdm(data_loader, desc='Encoding'):
             encoded_imgs = self.autoencoder.encoder(imgs).detach()
-            # TODO: change integer labels to written labels
-            labels = [str(label.item()) for label in labels]
+            labels = self._convert_labels(labels)
             encoded_labels = self.embedding_model.encode(labels, convert_to_tensor=True).detach()
             self.encoded_data.extend(zip(encoded_imgs, encoded_labels))
+
+    def _convert_labels(self, labels, seed=42):
+        """Converts labels from integers to strings in various languages (vectorized).
+
+        Args:
+            labels: A list of integer labels.
+            seed: An integer to seed the random number generator for reproducibility.
+
+        Returns:
+            A list of strings where 25% of the labels are the original integer as a string,
+            25% are written in English, 25% in German, and 25% in Spanish.
+        """
+
+        # Seed the random number generator for reproducability
+        random.seed(seed)
+        
+        # Try converting labels to integers, handle non-convertible elements
+        try:
+            labels = [int(x) for x in labels]
+        except ValueError:
+            raise ValueError("List elements must be integers or convertible to integers.")
+
+        # Ensure labels are within the valid range (0-9)
+        if any(x < 0 or x > 9 for x in labels):
+            raise ValueError("List elements must be between 0 and 9.")
+
+        # Define language probabilities
+        language_probs = np.array([0.25, 0.25, 0.25, 0.25])
+
+        print(len(labels))
+        size = len(labels)
+        # Sample random languages based on probabilities
+        languages = np.random.choice(["string", "english", "german", "spanish"], size=len(labels), p=language_probs)
+
+        # Convert labels based on languages (vectorized)
+        label_strings = np.where(
+            languages == "string",
+            str(labels),
+            np.where(
+                languages == "english",
+                np.array(["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"])[labels],
+                np.where(
+                    languages == "german",
+                    np.array(["null", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun"])[labels],
+                    np.array(["cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"])[labels],
+                ),
+            ),
+        )
+
+        return label_strings.tolist()
 
     def __len__(self):
         return len(self.encoded_data)
