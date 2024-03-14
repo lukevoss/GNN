@@ -15,15 +15,8 @@ class CustomMNIST(Dataset):
             train (bool):   If True, creates dataset from ``training.pt``,
                             otherwise from ``test.pt``.
         """
-        # Define transformations to apply to the data
-        transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
-            ]
-        )
         self.mnist = MNIST(root=root, train=train,
-                           transform=transform, download=True)
+                           transform=transforms.ToTensor(), download=True)
 
     def __len__(self):
         """
@@ -36,4 +29,3 @@ class CustomMNIST(Dataset):
         Fetch a sample for a given index.
         """
         return self.mnist[idx]
-

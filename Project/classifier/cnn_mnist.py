@@ -55,14 +55,14 @@ class CNN(L.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
-# Example usage
-# dataset = MNIST('', train=True, download=True, transform=transforms.ToTensor())
-# train, val = random_split(dataset, [55000, 5000])
-
-# train_loader = DataLoader(train, batch_size=32)
-# val_loader = DataLoader(val, batch_size=32)
-
-# model = LightningCNN()
-
-# trainer = pl.Trainer(max_epochs=10)
-# trainer.fit(model, train_loader, val_loader)
+    def encode(self, x):
+        """
+        returns 64 dimensional latent space of network
+        second to last layer
+        """
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = F.relu(self.conv3(x))
+        x = x.view(-1, 64 * 7 * 7)
+        x = F.relu(self.fc1(x))
+        return x

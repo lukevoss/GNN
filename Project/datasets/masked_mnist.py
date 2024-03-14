@@ -5,8 +5,8 @@ from torch.utils.data import Dataset
 import numpy as np
 
 
-class MaskedMNIST(Dataset):
-    def __init__(self, root="./datasets", train=True):
+class EncodedMaskedMNIST(Dataset):
+    def __init__(self, classifier, autoencoder, root="./datasets", train=True):
         """
         Initialize MNIST with randomply masked areas in rectengular format
 
@@ -16,16 +16,10 @@ class MaskedMNIST(Dataset):
             train (bool):   If True, creates dataset from ``training.pt``,
                             otherwise from ``test.pt``.
         """
-        transform_pipeline = transforms.Compose([
-            # Resize image to 224x224
-            transforms.Resize(
-                (224, 224), interpolation=transforms.InterpolationMode.BILINEAR),
-            transforms.ToTensor(),  # Convert image to PyTorch tensor
-            transforms.Normalize(mean=[0.45], std=[
-                                 0.22])  # Normalize the image
-        ])
+        self.classifier = classifier
+        self.autoencoder = autoencoder
         self.mnist = MNIST(root=root, train=train,
-                           transform=transform_pipeline, download=True)
+                           transform=transforms.ToTensor(), download=True)
 
     def __len__(self):
         """
@@ -42,8 +36,15 @@ class MaskedMNIST(Dataset):
         # Generate a random square mask
         masked_image, mask = self.apply_random_mask(image)
 
+        with torch.no_grad():
+            encoded_masked_image = self.classifier.encode(
+                masked_image).detach()
+
+        with torch.no_grad():
+            encoded_image = self.autoencoder.encoder(image).detach()
+
         # Return the masked image, original image, and label
-        return masked_image, image, label
+        return encoded_masked_image, encoded_image, label
 
     def apply_random_mask(self, image):
         """

@@ -1,9 +1,9 @@
 import torch
 from torch import nn
-import pytorch_lightning as pl
+import lightning as L
 
 
-class AutoencoderSimple(pl.LightningModule):
+class AutoencoderSimple(L.LightningModule):
     def __init__(self):
         super(AutoencoderSimple, self).__init__()
 
@@ -24,6 +24,7 @@ class AutoencoderSimple(pl.LightningModule):
         self.decoder_conv2 = nn.ConvTranspose2d(
             6, 1, kernel_size=3, stride=2, padding=1, output_padding=1
         )  # Use stride 2 for upscaling
+        self.criterion = nn.MSELoss()
 
     def encoder(self, x):
         # Encoder
