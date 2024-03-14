@@ -16,15 +16,16 @@ class MaskedMNIST(Dataset):
             train (bool):   If True, creates dataset from ``training.pt``,
                             otherwise from ``test.pt``.
         """
-        # Define transformations to apply to the data
-        transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
-            ]
-        )
+        transform_pipeline = transforms.Compose([
+            # Resize image to 224x224
+            transforms.Resize(
+                (224, 224), interpolation=transforms.InterpolationMode.BILINEAR),
+            transforms.ToTensor(),  # Convert image to PyTorch tensor
+            transforms.Normalize(mean=[0.45], std=[
+                                 0.22])  # Normalize the image
+        ])
         self.mnist = MNIST(root=root, train=train,
-                           transform=transform, download=True)
+                           transform=transform_pipeline, download=True)
 
     def __len__(self):
         """
@@ -57,6 +58,7 @@ class MaskedMNIST(Dataset):
         mask = torch.ones_like(image)
         mask[:, top:top+mask_size, left:left+mask_size] = 0  # Apply mask
 
-        masked_image = image * mask  # Masked image
+        masked_image = image.clone()  # Clone to not modify the original image
+        masked_image[:, top:top+mask_size, left:left+mask_size] = 0.5
 
         return masked_image, mask
