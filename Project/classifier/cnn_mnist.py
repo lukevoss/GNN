@@ -11,6 +11,7 @@ class CNN(L.LightningModule):
         self.conv2 = torch.nn.Conv2d(32, 64, kernel_size=3, padding=1)
         self.conv3 = torch.nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.pool = torch.nn.MaxPool2d(2, 2)
+        # self.fc0 = torch.nn.Linear(64 * 7 * 7, 128)
         self.fc1 = torch.nn.Linear(64 * 7 * 7, 64)
         self.fc2 = torch.nn.Linear(64, 10)
         self.accuracy = Accuracy(task="multiclass", num_classes=10)
@@ -20,6 +21,7 @@ class CNN(L.LightningModule):
         x = self.pool(F.relu(self.conv2(x)))
         x = F.relu(self.conv3(x))
         x = x.view(-1, 64 * 7 * 7)
+        # x = F.relu(self.fc0(x))
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x

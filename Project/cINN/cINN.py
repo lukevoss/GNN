@@ -31,7 +31,8 @@ class ConditionalRealNVP(L.LightningModule):
             ]
         )
         self.orthogonal_matrices = nn.ParameterList([
-            nn.Parameter(self._create_orthogonal_matrix(input_size), requires_grad=False) 
+            nn.Parameter(self._create_orthogonal_matrix(
+                input_size), requires_grad=False)
             for _ in range(n_blocks - 1)
         ])
 
@@ -73,14 +74,14 @@ class ConditionalRealNVP(L.LightningModule):
     def _create_orthogonal_matrix(self, dim):
         Q = special_ortho_group.rvs(dim)
         return torch.tensor(Q, dtype=torch.float32, device=self.device)
-    
+
     def training_step(self, batch, batch_idx):
         x_batch, cond_batch = batch
         z, ljd = self(x_batch, cond_batch)
         loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
         self.log("train_loss", loss)
         return loss
-    
+
     def validation_step(self, batch, batch_idx):
         x_batch, cond_batch = batch
         z, ljd = self(x_batch, cond_batch)
