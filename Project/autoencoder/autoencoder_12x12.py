@@ -3,23 +3,23 @@ from torch import nn
 import lightning as L
 
 
-class AutoencoderSimple(L.LightningModule):
+class Autoencoder12x12(L.LightningModule):
     def __init__(self):
-        super(AutoencoderSimple, self).__init__()
+        super(Autoencoder12x12, self).__init__()
 
         # Encoder layers
         self.encoder_conv1 = nn.Conv2d(
-            1, 6, kernel_size=3, stride=2, padding=1)
+            1, 4, kernel_size=3, stride=2, padding=1)
         self.encoder_conv2 = nn.Conv2d(
-            6, 12, kernel_size=3, stride=2, padding=1)
-        self.encoder_linear = nn.Linear(12 * 7 * 7, 64)  # 64*6 ---> 20
+            4, 8, kernel_size=3, stride=2, padding=1)
+        self.encoder_linear = nn.Linear(8*3*3, 10)
 
         # Decoder layers
-        self.decoder_linear = nn.Linear(64, 12 * 7 * 7)
+        self.decoder_linear = nn.Linear(10, 8*3*3)
         self.decoder_conv1 = nn.ConvTranspose2d(
-            12, 6, kernel_size=3, stride=2, padding=1, output_padding=1)
+            8, 4, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.decoder_conv2 = nn.ConvTranspose2d(
-            6, 1, kernel_size=3, stride=2, padding=1, output_padding=1)
+            4, 1, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.criterion = nn.MSELoss()
 
     def encoder(self, x):
@@ -27,13 +27,13 @@ class AutoencoderSimple(L.LightningModule):
         x = torch.relu(x)
         x = self.encoder_conv2(x)
         x = torch.relu(x)
-        x = x.view(-1, 12 * 7 * 7)
+        x = x.view(-1, 8*3*3)
         x = self.encoder_linear(x)
         return x
 
     def decoder(self, x):
         x = self.decoder_linear(x)
-        x = x.view(-1, 12, 7, 7)
+        x = x.view(-1, 8, 3, 3)
         x = self.decoder_conv1(x)
         x = torch.relu(x)
         x = self.decoder_conv2(x)
