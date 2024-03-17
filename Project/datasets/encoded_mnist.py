@@ -29,7 +29,7 @@ class EncodedMNIST(Dataset):
         self._encode_dataset()
 
     def _encode_dataset(self):
-        data_loader = DataLoader(self.mnist, batch_size=500, shuffle=False)
+        data_loader = DataLoader(self.mnist, batch_size=100, shuffle=False)
         for imgs, labels in tqdm(data_loader, desc='Encoding'):
             encoded_imgs = self.autoencoder.encoder(imgs).detach()
             labels = self._convert_labels(labels)
