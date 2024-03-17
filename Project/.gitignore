@@ -4,6 +4,10 @@
 /datasets/MNIST
 /lightning_logs
 /wandb
+/datasets_bla_bla
+
+# .npz files
+*.npz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
