@@ -1,7 +1,8 @@
 from .custom_mnist import CustomMNIST
 from .encoded_mnist import EncodedMNIST, DynamicEncodedMNIST
 from .masked_mnist import EncodedMaskedMNIST, MaskedMNIST
-from .superresolution_mnist import SuperresolutionMNIST, EncodedSuperresolutionMNIST
+from .custom_encoding_style_transfer import MixedMNIST, CustomEncodedStyleTransfer
+from .superresolution_mnist import SuperresolutionMNIST
 
 __all__ = ['CustomMNIST',
            'EncodedMNIST',
@@ -9,4 +10,6 @@ __all__ = ['CustomMNIST',
            'EncodedMaskedMNIST',
            'MaskedMNIST',
            'SuperresolutionMNIST',
-           'EncodedSuperresolutionMNIST']
+           'EncodedSuperresolutionMNIST',
+           'MixedMNIST',
+           'CustomEncodedStyleTransfer']
