@@ -51,13 +51,13 @@ class EncodedSuperresolutionMNIST(Dataset):
         """
         Return the number of samples in dataset.
         """
-        return len(self.masked_mnist)
+        return len(self.superresolution_mnist)
 
     def __getitem__(self, idx):
         image, small_image, label = self.superresolution_mnist[idx]
 
         with torch.no_grad():
-            encoded_small_image = self.autoencoder_small.encode(
+            encoded_small_image = self.autoencoder_small.encoder(
                 small_image).detach()
 
         with torch.no_grad():

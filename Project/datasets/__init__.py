@@ -9,6 +9,7 @@ __all__ = ['CustomMNIST',
            'DynamicEncodedMNIST',
            'EncodedMaskedMNIST',
            'MaskedMNIST',
-           'SuperresolutionMNIST'
+           'SuperresolutionMNIST',
+           'EncodedSuperresolutionMNIST',
            'MixedMNIST',
            'CustomEncodedStyleTransfer']
