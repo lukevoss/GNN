@@ -47,7 +47,7 @@ class MixedMNIST(Dataset):
     
     def _labels(self):
         len_colored_data=self.colored_mnist.size()[0]
-        labels= torch.cat((torch.zeros(len_colored_data),torch.ones(len_colored_data)))
+        labels= torch.cat((torch.zeros(len_colored_data//2),torch.ones(len_colored_data//2)))
         return labels
 
     def __len__(self):
