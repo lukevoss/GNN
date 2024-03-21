@@ -42,7 +42,7 @@ class MaskedMNIST(Dataset):
         Apply a random square mask to the image.
         """
         im_size = image.size(1)
-        # Random mask size between 1/6 to 1/4 of image size
+        # Random mask size between 1/4 to 1/2 of image size
         mask_size = np.random.randint(im_size // 4, im_size // 2)
         top = np.random.randint(0, im_size - mask_size)
         left = np.random.randint(0, im_size - mask_size)
