@@ -12,10 +12,10 @@ class Autoencoder12x12(L.LightningModule):
             1, 4, kernel_size=3, stride=2, padding=1)
         self.encoder_conv2 = nn.Conv2d(
             4, 8, kernel_size=3, stride=2, padding=1)
-        self.encoder_linear = nn.Linear(8*3*3, 32)
+        self.encoder_linear = nn.Linear(8*3*3, 64)
 
         # Decoder layers
-        self.decoder_linear = nn.Linear(32, 8*3*3)
+        self.decoder_linear = nn.Linear(64, 8*3*3)
         self.decoder_conv1 = nn.ConvTranspose2d(
             8, 4, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.decoder_conv2 = nn.ConvTranspose2d(
