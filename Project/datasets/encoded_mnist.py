@@ -21,8 +21,14 @@ class EncodedMNIST(Dataset):
     """
 
     def __init__(self, autoencoder, embedding_model, root="./datasets", train=True):
+        transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,))
+            ]
+        )
         self.mnist = MNIST(root=root, train=train,
-                           transform=transforms.ToTensor(), download=True)
+                           transform=transform, download=True)
         self.autoencoder = autoencoder
         self.embedding_model = embedding_model
         self.encoded_data = []
@@ -33,64 +39,38 @@ class EncodedMNIST(Dataset):
         for imgs, labels in tqdm(data_loader, desc='Encoding'):
             encoded_imgs = self.autoencoder.encoder(imgs).detach()
             labels = self._convert_labels(labels)
-            encoded_labels = self.embedding_model.encode(
-                labels, convert_to_tensor=True).detach()
+            encoded_labels = self.embedding_model.encode(labels, convert_to_tensor=True).detach()
             self.encoded_data.extend(zip(encoded_imgs, encoded_labels))
 
     def _convert_labels(self, labels, seed=42):
-        """Converts labels from integers to strings in various languages (vectorized).
-
-        Args:
-            labels: A list of integer labels.
-            seed: An integer to seed the random number generator for reproducibility.
-
-        Returns:
-            A list of strings where 25% of the labels are the original integer as a string,
-            25% are written in English, 25% in German, and 25% in Spanish.
-        """
-
         # Seed the random number generator for reproducability
         random.seed(seed)
-
-        # Try converting labels to integers, handle non-convertible elements
-        try:
-            labels = [int(x) for x in labels]
-        except ValueError:
-            raise ValueError(
-                "List elements must be integers or convertible to integers.")
-
+        
         # Ensure labels are within the valid range (0-9)
         if any(x < 0 or x > 9 for x in labels):
             raise ValueError("List elements must be between 0 and 9.")
+        
+        # Define the translations for each number in different languages
+        translations = {
+            "english": ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"],
+            "german": ["null", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun"],
+            "spanish": ["cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"],
+        }
+        
+        # Sample random languages for each label
+        languages = np.random.choice(["string", "english", "german", "spanish"], size=len(labels), p=[0.25, 0.25, 0.25, 0.25])
+        # languages = np.random.choice(["string"], size=len(labels), p=[1])
 
-        # Define language probabilities
-        language_probs = np.array([0.25, 0.25, 0.25, 0.25])
+        # Convert each label according to its assigned language
+        label_strings = []
+        for label, language in zip(labels, languages):
+            if language == "string":
+                label_strings.append(str(label.item()))
+            else:
+                label_strings.append(translations[language][label.item()])
+        
+        return label_strings
 
-        print(len(labels))
-        size = len(labels)
-        # Sample random languages based on probabilities
-        languages = np.random.choice(
-            ["string", "english", "german", "spanish"], size=len(labels), p=language_probs)
-
-        # Convert labels based on languages (vectorized)
-        label_strings = np.where(
-            languages == "string",
-            str(labels),
-            np.where(
-                languages == "english",
-                np.array(["zero", "one", "two", "three", "four",
-                         "five", "six", "seven", "eight", "nine"])[labels],
-                np.where(
-                    languages == "german",
-                    np.array(["null", "eins", "zwei", "drei", "vier",
-                             "fünf", "sechs", "sieben", "acht", "neun"])[labels],
-                    np.array(["cero", "uno", "dos", "tres", "cuatro",
-                             "cinco", "seis", "siete", "ocho", "nueve"])[labels],
-                ),
-            ),
-        )
-
-        return label_strings.tolist()
 
     def __len__(self):
         return len(self.encoded_data)
@@ -98,7 +78,45 @@ class EncodedMNIST(Dataset):
     def __getitem__(self, idx):
         encoded_img, encoded_label = self.encoded_data[idx]
         return encoded_img, encoded_label
-
+    
+    
+# class EncodedMNIST(Dataset):
+#     """
+#     A dataset class for MNIST that encodes images and labels beforehand using
+#     provided autoencoder and embedding models.
+    
+#     Parameters:
+#         autoencoder (nn.Module): The autoencoder model for image encoding.
+#         embedding_model (nn.Module): The model to encode labels.
+#         root (str): Root directory of MNIST dataset.
+#         train (bool): If True, create dataset from training set, else from test set.
+#         transform (callable, optional): Optional transform to be applied on a PIL image.
+#     """
+#     def __init__(self, autoencoder, embedding_model, root="./datasets", train = True):
+#         transform = transforms.Compose(
+#             [
+#                 transforms.ToTensor(),
+#                 transforms.Normalize((0.1307,), (0.3081,))
+#             ]
+#         )
+#         self.mnist = MNIST(root=root, train=train,
+#                            transform=transform, download=True)
+#         self.autoencoder = autoencoder
+#         self.embedding_model = embedding_model
+#         self.encoded_data = []
+#         self._encode_dataset()
+#     def _encode_dataset(self):
+#          data_loader = DataLoader(self.mnist, batch_size=100, shuffle=False)
+#          for imgs, labels in tqdm(data_loader, desc='Encoding'):
+#              encoded_imgs = self.autoencoder.encoder(imgs).detach()
+#              labels = [str(label.item()) for label in labels]
+#              encoded_labels = self.embedding_model.encode(labels, convert_to_tensor=True).detach()
+#              self.encoded_data.extend(zip(encoded_imgs, encoded_labels))
+#     def __len__(self):
+#         return len(self.encoded_data)
+#     def __getitem__(self, idx):
+#         encoded_img, encoded_label = self.encoded_data[idx]
+#         return encoded_img, encoded_label
 
 class DynamicEncodedMNIST(Dataset):
     """

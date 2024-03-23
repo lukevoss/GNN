@@ -35,6 +35,8 @@ class ConditionalRealNVP(L.LightningModule):
                 input_size), requires_grad=False)
             for _ in range(n_blocks - 1)
         ])
+        self.min_val_loss = float('inf')
+
 
     def forward(self, x, cond, rev=False):
         if rev:
@@ -87,6 +89,11 @@ class ConditionalRealNVP(L.LightningModule):
         z, ljd = self(x_batch, cond_batch)
         loss = torch.sum(0.5 * torch.sum(z**2, -1) - ljd) / x_batch.size(0)
         self.log("val_loss", loss)
+        if loss < self.min_val_loss:
+            self.min_val_loss = loss
+            # Log the new minimum validation loss using self.log
+            self.log('min_val_loss', self.min_val_loss, on_epoch=True, logger=True)
+            torch.save(self.state_dict(), f'txt_to_img_{self.hidden_size}_{self.n_blocks}.pth')
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
