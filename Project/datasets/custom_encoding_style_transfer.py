@@ -71,6 +71,7 @@ def encodings_inputs_for_style_transfer(ae_model, data):
     
 
 ### Create custom dataset for encodings
+### use this class if you have already encoded the data
 class CustomEncodedStyleTransfer(Dataset):
     def __init__(self, data, labels):
         self.encoded_data = data
