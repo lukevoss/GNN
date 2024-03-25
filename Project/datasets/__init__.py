@@ -10,7 +10,7 @@ from .superresolution_mnist import (
 
 __all__ = [
     "CustomMNIST",
-    "EncodedMNIST",
+    "LanguageMNIST",
     "DynamicEncodedMNIST",
     "EncodedMaskedMNIST",
     "MaskedMNIST",

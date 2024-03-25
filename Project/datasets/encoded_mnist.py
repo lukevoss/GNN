@@ -7,7 +7,7 @@ import random
 import numpy as np
 
 
-class EncodedMNIST(Dataset):
+class LanguageMNIST(Dataset):
     """
     A dataset class for MNIST that encodes images and labels beforehand using
     provided autoencoder and embedding models.
