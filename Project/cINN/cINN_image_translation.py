@@ -8,8 +8,12 @@ class ConditionalRealNVPImageTranslator(ConditionalRealNVP):
     containing image, translated_image, labels
     """
 
-    def __init__(self, input_size, hidden_size, n_blocks, condition_size, learning_rate=1e-3):
-        super().__init__(input_size, hidden_size, n_blocks, condition_size, learning_rate)
+    def __init__(
+        self, input_size, hidden_size, n_blocks, condition_size, learning_rate=1e-3
+    ):
+        super().__init__(
+            input_size, hidden_size, n_blocks, condition_size, learning_rate
+        )
 
     def training_step(self, batch, batch_idx):
         x_batch, cond_batch, _ = batch

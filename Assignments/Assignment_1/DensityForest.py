@@ -75,7 +75,6 @@ def get_bootstrap_indices(num_samples, max_length):
 
 
 class DensityForest:
-
     def __init__(
         self, n_estimators, max_depth=10, num_splits=10, min_infogain=1.5, boostrap=True
     ):

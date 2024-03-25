@@ -16,15 +16,19 @@ class SuperresolutionMNIST(Dataset):
             train (bool):   If True, creates dataset from ``training.pt``,
                             otherwise from ``test.pt``.
         """
-        reduce_size_transform = transforms.Compose([
-            transforms.Resize((12, 12)),  # Train AE on mini Mnist
-            transforms.ToTensor()
-        ])
+        reduce_size_transform = transforms.Compose(
+            [
+                transforms.Resize((12, 12)),  # Train AE on mini Mnist
+                transforms.ToTensor(),
+            ]
+        )
 
-        self.mnist = MNIST(root=root, train=train,
-                           transform=transforms.ToTensor(), download=True)
-        self.small_mnist = MNIST(root=root, train=train,
-                                 transform=reduce_size_transform, download=True)
+        self.mnist = MNIST(
+            root=root, train=train, transform=transforms.ToTensor(), download=True
+        )
+        self.small_mnist = MNIST(
+            root=root, train=train, transform=reduce_size_transform, download=True
+        )
 
     def __len__(self):
         """
@@ -49,15 +53,27 @@ class SuperresolutionEMNIST(Dataset):
             train (bool):   If True, creates dataset from ``training.pt``,
                             otherwise from ``test.pt``.
         """
-        reduce_size_transform = transforms.Compose([
-            transforms.Resize((12, 12)),  # Train AE on mini Mnist
-            transforms.ToTensor()
-        ])
+        reduce_size_transform = transforms.Compose(
+            [
+                transforms.Resize((12, 12)),  # Train AE on mini Mnist
+                transforms.ToTensor(),
+            ]
+        )
 
-        self.mnist = EMNIST(root=root, train=train,
-                            transform=transforms.ToTensor(), download=True, split=split)
-        self.small_mnist = EMNIST(root=root, train=train,
-                                  transform=reduce_size_transform, download=True, split=split)
+        self.mnist = EMNIST(
+            root=root,
+            train=train,
+            transform=transforms.ToTensor(),
+            download=True,
+            split=split,
+        )
+        self.small_mnist = EMNIST(
+            root=root,
+            train=train,
+            transform=reduce_size_transform,
+            download=True,
+            split=split,
+        )
 
     def __len__(self):
         """
@@ -72,13 +88,14 @@ class SuperresolutionEMNIST(Dataset):
 
 
 class EncodedSuperresolutionMNIST(Dataset):
-    def __init__(self, autoencoder_small, autoencoder_big, root="./datasets", train=True):
+    def __init__(
+        self, autoencoder_small, autoencoder_big, root="./datasets", train=True
+    ):
         self.autoencoder_small = autoencoder_small
         self.autoencoder_big = autoencoder_big
         self.autoencoder_small.eval()
         self.autoencoder_big.eval()
-        self.superresolution_mnist = SuperresolutionEMNIST(
-            root=root, train=train)
+        self.superresolution_mnist = SuperresolutionEMNIST(root=root, train=train)
 
     def __len__(self):
         """
@@ -90,8 +107,7 @@ class EncodedSuperresolutionMNIST(Dataset):
         image, small_image, label = self.superresolution_mnist[idx]
 
         with torch.no_grad():
-            encoded_small_image = self.autoencoder_small.encoder(
-                small_image).detach()
+            encoded_small_image = self.autoencoder_small.encoder(small_image).detach()
 
         with torch.no_grad():
             encoded_image = self.autoencoder_big.encoder(image).detach()

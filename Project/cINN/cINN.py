@@ -7,7 +7,9 @@ import numpy as np
 
 
 class ConditionalRealNVP(L.LightningModule):
-    def __init__(self, input_size, hidden_size, n_blocks, condition_size, learning_rate=1e-3):
+    def __init__(
+        self, input_size, hidden_size, n_blocks, condition_size, learning_rate=1e-3
+    ):
         """
         Initialize a ConditionalRealNVP model.
 
@@ -25,18 +27,19 @@ class ConditionalRealNVP(L.LightningModule):
         self.learning_rate = learning_rate
         self.coupling_blocks = nn.ModuleList(
             [
-                ConditionalCouplingBlock(
-                    input_size, hidden_size, self.condition_size)
+                ConditionalCouplingBlock(input_size, hidden_size, self.condition_size)
                 for _ in range(n_blocks)
             ]
         )
-        self.orthogonal_matrices = nn.ParameterList([
-            nn.Parameter(self._create_orthogonal_matrix(
-                input_size), requires_grad=False)
-            for _ in range(n_blocks - 1)
-        ])
-        self.min_val_loss = float('inf')
-
+        self.orthogonal_matrices = nn.ParameterList(
+            [
+                nn.Parameter(
+                    self._create_orthogonal_matrix(input_size), requires_grad=False
+                )
+                for _ in range(n_blocks - 1)
+            ]
+        )
+        self.min_val_loss = float("inf")
 
     def forward(self, x, cond, rev=False):
         if rev:
@@ -44,7 +47,7 @@ class ConditionalRealNVP(L.LightningModule):
         return self._forward(x, cond)
 
     def _forward(self, x, cond):
-        ljd = torch.zeros((x.shape[0]),  device=self.device)
+        ljd = torch.zeros((x.shape[0]), device=self.device)
         for l in range(self.n_blocks - 1):
             x, partial_ljd = self.coupling_blocks[l](x, cond)
             ljd += partial_ljd
@@ -92,8 +95,10 @@ class ConditionalRealNVP(L.LightningModule):
         if loss < self.min_val_loss:
             self.min_val_loss = loss
             # Log the new minimum validation loss using self.log
-            self.log('min_val_loss', self.min_val_loss, on_epoch=True, logger=True)
-            torch.save(self.state_dict(), f'txt_to_img_{self.hidden_size}_{self.n_blocks}.pth')
+            self.log("min_val_loss", self.min_val_loss, on_epoch=True, logger=True)
+            torch.save(
+                self.state_dict(), f"txt_to_img_{self.hidden_size}_{self.n_blocks}.pth"
+            )
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
@@ -121,9 +126,9 @@ class ConditionalCouplingBlock(L.LightningModule):
         )
 
     def forward(self, x, cond, rev=False):
-        x1, x2 = x[..., : self.split1], x[..., self.split1:]
+        x1, x2 = x[..., : self.split1], x[..., self.split1 :]
         params = self.subnet(torch.cat([x1, cond], -1))
-        s, t = params[..., : self.split2], params[..., self.split2:]
+        s, t = params[..., : self.split2], params[..., self.split2 :]
         s = torch.tanh(s)
         ljd = torch.sum(s, -1)
         if not rev:

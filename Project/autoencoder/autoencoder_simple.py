@@ -8,18 +8,18 @@ class AutoencoderSimple(L.LightningModule):
         super(AutoencoderSimple, self).__init__()
 
         # Encoder layers
-        self.encoder_conv1 = nn.Conv2d(
-            1, 6, kernel_size=3, stride=2, padding=1)
-        self.encoder_conv2 = nn.Conv2d(
-            6, 12, kernel_size=3, stride=2, padding=1)
+        self.encoder_conv1 = nn.Conv2d(1, 6, kernel_size=3, stride=2, padding=1)
+        self.encoder_conv2 = nn.Conv2d(6, 12, kernel_size=3, stride=2, padding=1)
         self.encoder_linear = nn.Linear(12 * 7 * 7, 64)  # 64*6 ---> 20
 
         # Decoder layers
         self.decoder_linear = nn.Linear(64, 12 * 7 * 7)
         self.decoder_conv1 = nn.ConvTranspose2d(
-            12, 6, kernel_size=3, stride=2, padding=1, output_padding=1)
+            12, 6, kernel_size=3, stride=2, padding=1, output_padding=1
+        )
         self.decoder_conv2 = nn.ConvTranspose2d(
-            6, 1, kernel_size=3, stride=2, padding=1, output_padding=1)
+            6, 1, kernel_size=3, stride=2, padding=1, output_padding=1
+        )
         self.criterion = nn.MSELoss()
 
     def encoder(self, x):

@@ -16,8 +16,9 @@ class MaskedMNIST(Dataset):
             train (bool):   If True, creates dataset from ``training.pt``,
                             otherwise from ``test.pt``.
         """
-        self.mnist = MNIST(root=root, train=train,
-                           transform=transforms.ToTensor(), download=True)
+        self.mnist = MNIST(
+            root=root, train=train, transform=transforms.ToTensor(), download=True
+        )
 
     def __len__(self):
         """
@@ -48,10 +49,10 @@ class MaskedMNIST(Dataset):
         left = np.random.randint(0, im_size - mask_size)
 
         mask = torch.ones_like(image)
-        mask[:, top:top+mask_size, left:left+mask_size] = 0  # Apply mask
+        mask[:, top : top + mask_size, left : left + mask_size] = 0  # Apply mask
 
         masked_image = image.clone()  # Clone to not modify the original image
-        masked_image[:, top:top+mask_size, left:left+mask_size] = -1
+        masked_image[:, top : top + mask_size, left : left + mask_size] = -1
 
         return masked_image, mask
 
@@ -74,8 +75,7 @@ class EncodedMaskedMNIST(Dataset):
         image, masked_image, label = self.masked_mnist[idx]
 
         with torch.no_grad():
-            encoded_masked_image = self.classifier.encode(
-                masked_image).detach()
+            encoded_masked_image = self.classifier.encode(masked_image).detach()
 
         with torch.no_grad():
             encoded_image = self.autoencoder.encoder(image).detach()

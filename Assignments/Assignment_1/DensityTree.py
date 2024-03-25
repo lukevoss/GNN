@@ -104,7 +104,6 @@ def split_data_lin(data, start, direction):
 
 
 class RandomDensityTree:
-
     def __init__(
         self, max_depth=10, num_splits=50, min_infogain=2, rand=True, splittype="axis"
     ):
@@ -176,7 +175,6 @@ class RandomDensityTree:
 
 
 class Node:
-
     def __init__(
         self,
         data,
@@ -263,7 +261,6 @@ class Node:
             covs_right = []
 
             for s in range(num_splits):
-
                 if self.splittype == "linear":
                     left_data, right_data = split_data_lin(
                         data, rnd_splits[s]["split"], rnd_splits[s]["direction"]
@@ -274,7 +271,6 @@ class Node:
                     )
 
                 if left_data.shape[0] > 2 and right_data.shape[0] > 2:
-
                     right_datas.append(right_data)
                     left_datas.append(left_data)
 
@@ -303,7 +299,6 @@ class Node:
                 best = np.argmax(info_gains)
 
                 if info_gains[best] >= min_infogain:
-
                     self.split = rnd_splits[best]["split"]  # best split
                     self.split_dim = rnd_splits[best]["direction"]
                     self.history.append(rnd_splits[best])

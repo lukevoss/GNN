@@ -35,8 +35,8 @@ class MultiLayerCNN(L.LightningModule):
         loss = F.cross_entropy(logits, y)
         preds = torch.argmax(logits, dim=1)
         acc = self.accuracy(preds, y)
-        self.log('train_loss', loss, prog_bar=True)
-        self.log('train_acc', acc, prog_bar=True)
+        self.log("train_loss", loss, prog_bar=True)
+        self.log("train_acc", acc, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -45,15 +45,15 @@ class MultiLayerCNN(L.LightningModule):
         loss = F.cross_entropy(logits, y)
         preds = torch.argmax(logits, dim=1)
         acc = self.accuracy(preds, y)
-        self.log('val_loss', loss, prog_bar=True)
-        self.log('val_acc', acc, prog_bar=True)
+        self.log("val_loss", loss, prog_bar=True)
+        self.log("val_acc", acc, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
         preds = torch.argmax(logits, dim=1)
         accuracy = self.accuracy(preds, y)
-        self.log('test_accuracy', accuracy, on_step=False, on_epoch=True)
+        self.log("test_accuracy", accuracy, on_step=False, on_epoch=True)
         return accuracy
 
     def configure_optimizers(self):

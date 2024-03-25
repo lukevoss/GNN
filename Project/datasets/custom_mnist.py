@@ -15,8 +15,9 @@ class CustomMNIST(Dataset):
             train (bool):   If True, creates dataset from ``training.pt``,
                             otherwise from ``test.pt``.
         """
-        self.mnist = MNIST(root=root, train=train,
-                           transform=transforms.ToTensor(), download=True)
+        self.mnist = MNIST(
+            root=root, train=train, transform=transforms.ToTensor(), download=True
+        )
 
     def __len__(self):
         """

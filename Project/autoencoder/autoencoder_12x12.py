@@ -8,18 +8,18 @@ class Autoencoder12x12(L.LightningModule):
         super(Autoencoder12x12, self).__init__()
 
         # Encoder layers
-        self.encoder_conv1 = nn.Conv2d(
-            1, 4, kernel_size=3, stride=2, padding=1)
-        self.encoder_conv2 = nn.Conv2d(
-            4, 8, kernel_size=3, stride=2, padding=1)
-        self.encoder_linear = nn.Linear(8*3*3, 64)
+        self.encoder_conv1 = nn.Conv2d(1, 4, kernel_size=3, stride=2, padding=1)
+        self.encoder_conv2 = nn.Conv2d(4, 8, kernel_size=3, stride=2, padding=1)
+        self.encoder_linear = nn.Linear(8 * 3 * 3, 64)
 
         # Decoder layers
-        self.decoder_linear = nn.Linear(64, 8*3*3)
+        self.decoder_linear = nn.Linear(64, 8 * 3 * 3)
         self.decoder_conv1 = nn.ConvTranspose2d(
-            8, 4, kernel_size=3, stride=2, padding=1, output_padding=1)
+            8, 4, kernel_size=3, stride=2, padding=1, output_padding=1
+        )
         self.decoder_conv2 = nn.ConvTranspose2d(
-            4, 1, kernel_size=3, stride=2, padding=1, output_padding=1)
+            4, 1, kernel_size=3, stride=2, padding=1, output_padding=1
+        )
         self.criterion = nn.MSELoss()
 
     def encoder(self, x):
@@ -27,7 +27,7 @@ class Autoencoder12x12(L.LightningModule):
         x = torch.relu(x)
         x = self.encoder_conv2(x)
         x = torch.relu(x)
-        x = x.view(-1, 8*3*3)
+        x = x.view(-1, 8 * 3 * 3)
         x = self.encoder_linear(x)
         return x
 
